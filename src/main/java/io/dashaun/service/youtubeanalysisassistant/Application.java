@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
+import java.time.Duration;
 
 @SpringBootApplication
 public class Application {
@@ -29,7 +30,12 @@ public class Application {
 class Config{
 	@Bean
 	RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
-		return restTemplateBuilder.build();
+		Duration socketTimeout = Duration.ofSeconds(120); // 30 seconds, adjust as needed
+
+		return restTemplateBuilder
+				.setReadTimeout(socketTimeout)   // Set the socket read timeout
+				.setConnectTimeout(socketTimeout) // Set the socket connect timeout
+				.build();
 	}
 }
 
