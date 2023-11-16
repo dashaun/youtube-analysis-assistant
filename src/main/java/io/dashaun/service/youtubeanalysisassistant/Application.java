@@ -1,6 +1,7 @@
 package io.dashaun.service.youtubeanalysisassistant;
 
 import org.springframework.ai.client.AiClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -37,10 +38,13 @@ class YaaClient {
 
 	private final RestTemplate restTemplate;
 	private final AiClient aiClient;
+	
+	private final String openaiApiKey;
 
-	YaaClient(RestTemplate restTemplate, AiClient aiClient) {
+	YaaClient(RestTemplate restTemplate, AiClient aiClient, @Value("${spring.ai.openai.api-key}")String openaiApiKey) {
         this.restTemplate = restTemplate;
         this.aiClient = aiClient;
+		this.openaiApiKey = openaiApiKey;
     }
 
 
@@ -57,12 +61,11 @@ class YaaClient {
 	}
 
 	private static final String API_URL = "https://api.openai.com/v1/images/generations";
-	private static final String OPENAI_API_KEY = "your_api_key_here"; // Replace with actual API key
 
 	String generateImage(String prompt) {
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("Authorization", "Bearer " + OPENAI_API_KEY);
+		headers.set("Authorization", "Bearer " + openaiApiKey);
 
 		var request = new ImageGenerationRequest("dall-e-3",prompt, 1, "1024x1024");
 		var entity = new HttpEntity<>(request, headers);
