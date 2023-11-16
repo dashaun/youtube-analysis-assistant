@@ -1,5 +1,6 @@
 package io.dashaun.service.youtubeanalysisassistant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.ai.client.AiClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -10,12 +11,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
 import java.time.Duration;
+import java.util.List;
 
 @SpringBootApplication
 public class Application {
@@ -27,10 +28,11 @@ public class Application {
 }
 
 @Configuration
-class Config{
+class YaaConfiguration {
+
 	@Bean
 	RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
-		Duration socketTimeout = Duration.ofSeconds(120); // 30 seconds, adjust as needed
+		var socketTimeout = Duration.ofSeconds(120); // 30 seconds, adjust as needed
 
 		return restTemplateBuilder
 				.setReadTimeout(socketTimeout)   // Set the socket read timeout
@@ -68,25 +70,42 @@ class YaaClient {
 
 	private static final String API_URL = "https://api.openai.com/v1/images/generations";
 
-	String generateImage(String prompt) {
+	ImageGenerationResponse generateImage(String prompt, ImageSize imageSize) {
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.set("Authorization", "Bearer " + openaiApiKey);
 
-		var request = new ImageGenerationRequest("dall-e-3",prompt, 1, "1024x1024");
+		var request = new ImageGenerationRequest("dall-e-3", prompt, 1, imageSize.value());
 		var entity = new HttpEntity<>(request, headers);
-		var response = restTemplate.postForEntity(API_URL, entity, String.class);
+		var response = restTemplate.postForEntity(API_URL, entity, ImageGenerationResponse.class);
 		return response.getBody();
 	}
 }
-//public class ImageGenerationRequest {
-//	private String model;
-//	private String prompt;
-//	private int n;
-//	private String size;
-//
-//	// Constructors, getters and setters
-//}
+
+record ImageResponse(@JsonProperty("revised_prompt") String revisedPrompt, URL url) {
+}
+
+record ImageGenerationResponse(long created, List<ImageResponse> data) {
+}
+
+
+enum ImageSize {
+
+	SIZE_1024x1024("1024x1024"),
+	SIZE_1024x1792("1024x1792"),
+	SIZE_1792x1024("1792x1024"),
+	;
+
+	private final String value;
+
+	ImageSize(String s) {
+		this.value = s;
+	}
+
+	String value() {
+		return this.value;
+	}
+}
 
 //1024x1024, 1024x1792 or 1792x1024 
 record ImageGenerationRequest(String model, String prompt, int n, String size) {
